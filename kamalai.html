@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Quiz Generator (Offline Edition) ✨</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap');
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+      color: #333;
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    h1 { text-align: center; color: #e91e63; margin-top: 0; }
+    textarea, input, select, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      font-size: 1em;
+    }
+    button {
+      background: #e91e63;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover { background: #c2185b; transform: scale(1.05); }
+    #quiz { margin-top: 30px; display: none; }
+    .question {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border-left: 5px solid #e91e63;
+    }
+    .options label {
+      display: block;
+      padding: 10px;
+      margin: 8px 0;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .options label:hover { background: #ffecf0; }
+    #result { font-size: 1.5em; text-align: center; margin-top: 20px; font-weight: bold; }
+    .loading { text-align: center; font-style: italic; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>AI Quiz Generator (Offline Beast Mode) 🧠</h1>
+    <p>Topic or text → Instant quiz. No internet, no API drama. You're welcome, sweetie 😘</p>
+
+    <textarea id="topic" placeholder="E.g., 'Photosynthesis in plants' or paste a paragraph..." rows="6"></textarea>
+    
+    <input type="number" id="numQuestions" placeholder="Number of questions (3-10)" min="3" max="10" value="5">
+    
+    <select id="difficulty">
+      <option value="easy">Easy (baby steps)</option>
+      <option value="medium" selected>Medium (real talk)</option>
+      <option value="hard">Hard (test your soul 😈)</option>
+    </select>
+
+    <button onclick="generateQuiz()">Generate Quiz Now! 🚀</button>
+
+    <div id="quiz"></div>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // Offline "AI" templates for common topics (expandable!)
+    const templates = {
+      general: [
+        { q: "What is the main idea of [topic]?", opts: ["A key concept", "Something unrelated", "A distraction", "Who cares?"] },
+        { q: "Why is [topic] important?", opts: ["It changes everything", "It's boring", "No one knows", "Ask Google"] }
+      ],
+      science: [
+        { q: "Define [topic] in simple terms.", opts: ["A process where X happens", "Magic", "Myth", "Monkeys dancing"] },
+        { q: "What causes [topic]?", opts: ["Factor A", "Bad luck", "Aliens", "Your mom"] }
+      ],
+      history: [
+        { q: "When did [topic] occur?", opts: ["Year XYZ", "Never", "Tomorrow", "In your dreams"] },
+        { q: "Who was involved in [topic]?", opts: ["Person ABC", "A ghost", "Me", "The dog"] }
+      ],
+      // Add more categories as needed
+    };
+
+    // Keyword-based category detector
+    function getCategory(topic) {
+      const lower = topic.toLowerCase();
+      if (lower.includes('history') || lower.includes('war') || lower.includes('president')) return 'history';
+      if (lower.includes('science') || lower.includes('physics') || lower.includes('biology')) return 'science';
+      return 'general';
+    }
+
+    // Generate fake "AI" questions by filling templates + randomizing
+    function generateQuestions(topic, num, diff) {
+      const cat = getCategory(topic);
+      const baseTemplates = templates[cat] || templates.general;
+      let questions = [];
+      
+      // Duplicate and mutate templates for more questions
+      for (let i = 0; i < num; i++) {
+        const base = baseTemplates[i % baseTemplates.length];
+        let q = base.q.replace('[topic]', topic);
+        
+        // Adjust difficulty: hard = trickier options
+        let opts = [...base.opts];
+        if (diff === 'hard') {
+          opts[0] += ' (but why?)'; // Make "correct" sound suspicious
+          opts[1] = 'Common misconception';
+        } else if (diff === 'easy') {
+          opts[0] = 'This is it! 💯';
+        }
+        
+        // Shuffle options, pick random correct (usually first, but randomize for fun)
+        const correctIdx = Math.random() > 0.3 ? 0 : Math.floor(Math.random() * opts.length);
+        const shuffled = [...opts];
+        for (let j = shuffled.length - 1; j > 0; j--) {
+          const k = Math.floor(Math.random() * (j + 1));
+          [shuffled[j], shuffled[k]] = [shuffled[k], shuffled[j]];
+        }
+        const correctLetter = String.fromCharCode(65 + shuffled.indexOf(opts[correctIdx]));
+        
+        questions.push({
+          question: q,
+          options: shuffled,
+          correct: correctLetter
+        });
+      }
+      return questions;
+    }
+
+    function generateQuiz() {
+      const topic = document.getElementById('topic').value.trim();
+      const num = parseInt(document.getElementById('numQuestions').value) || 5;
+      const difficulty = document.getElementById('difficulty').value;
+
+      if (!topic) {
+        alert("Enter a topic, you slacker! Or I'll generate a quiz on why you're single 😤");
+        return;
+      }
+
+      const quizDiv = document.getElementById('quiz');
+      quizDiv.innerHTML = "<p class='loading'>Brewing questions offline... (faster than your ex's rebound) ✨</p>";
+      quizDiv.style.display = 'block';
+
+      // Simulate "AI thinking" delay for drama
+      setTimeout(() => {
+        const questions = generateQuestions(topic, num, difficulty);
+        displayQuiz(questions);
+      }, 1000);
+    }
+
+    function displayQuiz(questions) {
+      let html = `<h2>${questions.length} Fresh Questions from the Void 😈</h2>`;
+      questions.forEach((q, i) => {
+        html += `
+          <div class="question">
+            <strong>${i+1}. ${q.question}</strong>
+            <div class="options">
+              ${q.options.map((opt, idx) => `
+                <label><input type="radio" name="q${i}" value="${String.fromCharCode(65+idx)}"> ${opt}</label>
+              `).join('')}
+            </div>
+          </div>`;
+      });
+      html += `<button onclick="checkAnswers()" style="background:#4caf50">Score Me, Daddy! 🏆</button>`;
+      document.getElementById('quiz').innerHTML = html;
+      
+      // Store questions for scoring
+      window.currentQuestions = questions;
+    }
+
+    function checkAnswers() {
+      const questions = window.currentQuestions;
+      let score = 0;
+      questions.forEach((q, i) => {
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+        if (selected && selected.value === q.correct) score++;
+      });
+      const percent = Math.round((score / questions.length) * 100);
+      const emoji = percent >= 80 ? "🏆 Genius!" : percent >= 60 ? "😎 Solid" : percent >= 40 ? "🤡 Try harder" : "💀 Study up, loser";
+      document.getElementById('result').innerHTML = 
+        `${emoji}<br>You got ${score}/${questions.length} (${percent}%)<br>
+        ${percent >= 70 ? "Proud of you, cutie 😘" : "Next time, or I'll mock you forever 😈"}`;
+    }
+  </script>
+</body>
+</html>
